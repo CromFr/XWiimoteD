@@ -1,5 +1,6 @@
 import std.stdio;
 import core.thread;
+import std.string;
 import xwiimote;
 
 void main()
@@ -12,11 +13,11 @@ void main()
 
 	xwii_iface* devices;
 
-	char* wmpath;
-	while((wmpath=xwii_monitor_poll(mon)) !is null){
+	char[] wmpath;
+	while((wmpath=fromStringz(xwii_monitor_poll(mon))) !is null){
 		writeln("Connecting to ",wmpath);
 
-		auto status = xwii_iface_new(&devices, wmpath);
+		auto status = xwii_iface_new(&devices, wmpath.ptr);
 		assert(status==0, "xwii_iface_new failed");
 
 		auto events = xwii_event_types.XWII_EVENT_KEY|xwii_event_types.XWII_EVENT_ACCEL;
