@@ -4,41 +4,49 @@ import std.conv : to;
 import core.sys.posix.dlfcn;
 
 private static __gshared void* lib = null;
+struct dyncall{};//Functions from xwii
 
 void xwii_load(in string librarypath="libxwiimote.so"){
 	import std.stdio : writeln;
+	import std.traits;
 
 	lib = dlopen(librarypath.ptr, RTLD_LAZY);
 	if(!lib){
 		throw new Exception("Library '"~librarypath~"' failed to load: "~to!string(dlerror()));
 	}
-	else
-		writeln(librarypath," has been loaded");
-}
 
+	foreach(member ; __traits(allMembers, xwiimote)){
+		static if(isCallable!(mixin(member))){
+			foreach(attr ; __traits(getAttributes, mixin(member))){
+				static if(attr.stringof=="dyncall"){
+					//writeln("    ",member," loaded !");
+					mixin(member) = cast (typeof(mixin(member))) (dlsym(lib, member.ptr));
 
-T xwii_call(T, VT...)(in string fun, VT args){
-	debug{
-		assert(lib !is null, "You must load library with xwii_load before executing xwii functions");
-	}
-	import std.stdio : writeln;
-	string arglist;
-	foreach(arg ; args)arglist~=to!string(arg)~",";
-	writeln(T.stringof," ",fun,"(",arglist,");");
-	T function(VT) fn = cast(T function(VT)) dlsym(lib, fun.ptr);
-
-	debug{
-		if(char* e = dlerror())
-			throw new Exception("Function call error in XWiimoteD': "~to!string(e));
+					if(char* e = dlerror()){
+						throw new Exception("Could not find symbol '"~member~"' in "~librarypath);
+					}
+					break;
+				}
+			}
+		}
 	}
 
-	return fn(args);
+	writeln(librarypath," has been loaded");
 }
 
 static ~this(){
 	if(lib !is null)
 		dlclose(lib);
 }
+
+
+
+
+
+
+import core.stdc.time;
+
+extern (C):
 
  
 enum XWII__NAME = "Nintendo Wii Remote";
@@ -50,21 +58,7 @@ enum XWII_NAME_NUNCHUK = XWII__NAME~" Nunchuk";
 enum XWII_NAME_CLASSIC_CONTROLLER = XWII__NAME~" Classic Controller";
 enum XWII_NAME_BALANCE_BOARD = XWII__NAME~" Balance Board";
 enum XWII_NAME_PRO_CONTROLLER = XWII__NAME~" Pro Controller";
-//alias XWII_LED(num) = (XWII_LED1 + (num) - 1); TODO
-
-
-
-
-
-// AUTO GENERATED from xwiimote.h with dstep
-//- added xwii_call to functions
-//- Added private import in xwii_event.timeval, renamed __* to *
-//- Added types to xwii_event_types and xwii_event_keys enums & changed structs to use the enums
-
-
-import core.stdc.time;
-
-extern (C):
+int XWII_LED(int num){return (xwii_led.XWII_LED1 + (num) - 1);}
 
 enum xwii_event_types : uint
 {
@@ -180,29 +174,28 @@ union xwii_event_union
 	ubyte[128] reserved;
 }
 
-bool xwii_event_ir_is_valid (const(xwii_event_abs)* abs)									{return xwii_call!bool("xwii_event_ir_is_valid",abs);}
-int xwii_iface_new (xwii_iface** dev, const(char)* syspath)									{return xwii_call!int("xwii_iface_new",dev,syspath);}
-void xwii_iface_ref (xwii_iface* dev)														{return xwii_call!void("xwii_iface_ref",dev);}
-void xwii_iface_unref (xwii_iface* dev)														{return xwii_call!void("xwii_iface_unref",dev);}
-int xwii_iface_get_fd (xwii_iface* dev)														{return xwii_call!int("xwii_iface_get_fd",dev);}
-int xwii_iface_watch (xwii_iface* dev, bool watch)											{return xwii_call!int("xwii_iface_watch",dev,watch);}
-int xwii_iface_open (xwii_iface* dev, uint ifaces)											{return xwii_call!int("xwii_iface_open",dev,ifaces);}
-void xwii_iface_close (xwii_iface* dev, uint ifaces)										{return xwii_call!void("xwii_iface_close",dev,ifaces);}
-uint xwii_iface_opened (xwii_iface* dev)													{return xwii_call!uint("xwii_iface_opened",dev);}
-uint xwii_iface_available (xwii_iface* dev)													{return xwii_call!uint("xwii_iface_available",dev);}
-int xwii_iface_poll (xwii_iface* dev, xwii_event* ev)										{return xwii_call!int("xwii_iface_poll",dev,ev);}
-int xwii_iface_dispatch (xwii_iface* dev, xwii_event* ev, size_t size)						{return xwii_call!int("xwii_iface_dispatch",dev,ev,size);}
-int xwii_iface_rumble (xwii_iface* dev, bool on)											{return xwii_call!int("xwii_iface_rumble",dev,on);}
-int xwii_iface_get_led (xwii_iface* dev, uint led, bool* state)								{return xwii_call!int("xwii_iface_get_led",dev,led,state);}
-int xwii_iface_set_led (xwii_iface* dev, uint led, bool state)								{return xwii_call!int("xwii_iface_set_led",dev,led,state);}
-int xwii_iface_get_battery (xwii_iface* dev, ubyte* capacity)								{return xwii_call!int("xwii_iface_get_battery",dev,capacity);}
-int xwii_iface_get_devtype (xwii_iface* dev, char** devtype)								{return xwii_call!int("xwii_iface_get_devtype",dev,devtype);}
-int xwii_iface_get_extension (xwii_iface* dev, char** extension)							{return xwii_call!int("xwii_iface_get_extension",dev,extension);}
-void xwii_iface_set_mp_normalization (xwii_iface* dev, int x, int y, int z, int factor)		{return xwii_call!void("xwii_iface_set_mp_normalization",dev,x,y,z,factor);}
-void xwii_iface_get_mp_normalization (xwii_iface* dev, int* x, int* y, int* z, int* factor)	{return xwii_call!void("xwii_iface_get_mp_normalization",dev,x,y,z,factor);}
-xwii_monitor* xwii_monitor_new (bool poll, bool direct)										{return xwii_call!(xwii_monitor*)("xwii_monitor_new",poll,direct);}
-void xwii_monitor_ref (xwii_monitor* mon)													{return xwii_call!void("xwii_monitor_ref",mon);}
-void xwii_monitor_unref (xwii_monitor* mon)													{return xwii_call!void("xwii_monitor_unref",mon);}
-int xwii_monitor_get_fd (xwii_monitor* monitor, bool blocking)								{return xwii_call!int("xwii_monitor_get_fd",monitor,blocking);}
-char* xwii_monitor_poll (xwii_monitor* monitor)												{return xwii_call!(char*)("xwii_monitor_poll",monitor);}
-
+//@dyncall bool function(const(xwii_event_abs)* abs) 							xwii_event_ir_is_valid;
+@dyncall int function(xwii_iface** dev, const(char)* syspath) 				xwii_iface_new;
+@dyncall void function(xwii_iface* dev) 									xwii_iface_ref;
+@dyncall void function(xwii_iface* dev) 									xwii_iface_unref;
+@dyncall int function(xwii_iface* dev) 										xwii_iface_get_fd;
+@dyncall int function(xwii_iface* dev, bool watch) 							xwii_iface_watch;
+@dyncall int function(xwii_iface* dev, uint ifaces) 						xwii_iface_open;
+@dyncall void function(xwii_iface* dev, uint ifaces) 						xwii_iface_close;
+@dyncall uint function(xwii_iface* dev) 									xwii_iface_opened;
+@dyncall uint function(xwii_iface* dev) 									xwii_iface_available;
+@dyncall int function(xwii_iface* dev, xwii_event* ev) 						xwii_iface_poll;
+@dyncall int function(xwii_iface* dev, xwii_event* ev, size_t size	) 		xwii_iface_dispatch;
+@dyncall int function(xwii_iface* dev, bool on) 							xwii_iface_rumble;
+@dyncall int function(xwii_iface* dev, uint led, bool* state) 				xwii_iface_get_led;
+@dyncall int function(xwii_iface* dev, uint led, bool state) 				xwii_iface_set_led;
+@dyncall int function(xwii_iface* dev, ubyte* capacity) 					xwii_iface_get_battery;
+@dyncall int function(xwii_iface* dev, char** devtype) 						xwii_iface_get_devtype;
+@dyncall int function(xwii_iface* dev, char** extension) 					xwii_iface_get_extension;
+@dyncall void function(xwii_iface* dev, int x, int y, int z, int factor) 	xwii_iface_set_mp_normalization;
+@dyncall void function(xwii_iface* dev, int* x, int* y, int* z, int* factor)xwii_iface_get_mp_normalization;
+@dyncall xwii_monitor* function(bool poll, bool direct) 					xwii_monitor_new;
+@dyncall void function(xwii_monitor* mon) 									xwii_monitor_ref;
+@dyncall void function(xwii_monitor* mon) 									xwii_monitor_unref;
+@dyncall int function(xwii_monitor* monitor, bool blocking) 				xwii_monitor_get_fd;
+@dyncall char* function(xwii_monitor* monitor) 								xwii_monitor_poll;
