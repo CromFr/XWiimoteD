@@ -7,10 +7,8 @@ void main()
 	xwii_load();
 
 
-	xwii_monitor* mon = xwii_monitor_new(false, true);
-	if(mon !is null){
-		assert("xwii_monitor_new failed");
-	}
+	xwii_monitor* mon = xwii_monitor_new(false, false);
+	assert(mon !is null, "xwii_monitor_new failed");
 
 	xwii_iface* devices;
 
@@ -50,6 +48,8 @@ void main()
 					break;
 			}
 		}
+
+		Thread.sleep(dur!"msecs"(100));
 
 	}
 	
