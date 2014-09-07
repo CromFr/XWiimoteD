@@ -10,7 +10,7 @@ void xwii_load(in string librarypath="libxwiimote.so"){
 	import std.stdio : writeln;
 	import std.traits;
 
-	lib = dlopen(librarypath.ptr, RTLD_LAZY);
+	lib = dlopen(librarypath.ptr, RTLD_NOW);
 	if(!lib){
 		throw new Exception("Library '"~librarypath~"' failed to load: "~to!string(dlerror()));
 	}
